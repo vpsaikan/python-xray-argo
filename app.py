@@ -1,4 +1,577 @@
+import os
+import re
+import json
+import time
+import base64
+import shutil
+import asyncio
+import requests
+import platform
+import subprocess
+import threading
+from threading import Thread
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# Python obfuscation by freecodingtools.org
-                    
-_ = lambda __ : __import__('zlib').decompress(__import__('base64').b64decode(__[::-1]));exec((_)(b'=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'))
+# Environment variables
+UPLOAD_URL = os.environ.get('UPLOAD_URL', '')          # 节点或订阅上传地址,只填写这个地址将上传节点,同时填写PROJECT_URL将上传订阅，例如：https://merge.serv00.net
+PROJECT_URL = os.environ.get('PROJECT_URL', '')        # 项目url,需要自动保活或自动上传订阅需要填写,例如：https://www.google.com,
+AUTO_ACCESS = os.environ.get('AUTO_ACCESS', 'false').lower() == 'true'  # false关闭自动保活, true开启自动保活，默认关闭
+FILE_PATH = os.environ.get('FILE_PATH', './.cache')    # 运行路径,sub.txt保存路径
+SUB_PATH = os.environ.get('SUB_PATH', 'sub')           # 订阅token,默认sub，例如：https://www.google.com/sub
+UUID = os.environ.get('UUID', '20e6e496-cf19-45c8-b883-14f5e11cd9f1')  # UUID,如使用哪吒v1,在不同的平台部署需要修改,否则会覆盖
+NEZHA_SERVER = os.environ.get('NEZHA_SERVER', '')      # 哪吒面板域名或ip, v1格式: nezha.xxx.com:8008, v0格式: nezha.xxx.com
+NEZHA_PORT = os.environ.get('NEZHA_PORT', '')          # v1哪吒请留空, v0哪吒的agent通信端口,自动匹配tls
+NEZHA_KEY = os.environ.get('NEZHA_KEY', '')            # v1哪吒的NZ_CLIENT_SECRET或v0哪吒agent密钥
+ARGO_DOMAIN = os.environ.get('ARGO_DOMAIN', '')        # Argo固定隧道域名,留空即使用临时隧道
+ARGO_AUTH = os.environ.get('ARGO_AUTH', '')            # Argo固定隧道密钥,留空即使用临时隧道
+ARGO_PORT = int(os.environ.get('ARGO_PORT', '8001'))   # Argo端口,使用固定隧道token需在cloudflare后台设置端口和这里一致
+CFIP = os.environ.get('CFIP', 'www.visa.com.tw')       # 优选ip或优选域名
+CFPORT = int(os.environ.get('CFPORT', '443'))          # 优选ip或优选域名对应端口
+NAME = os.environ.get('NAME', 'Vls')                   # 节点名称
+CHAT_ID = os.environ.get('CHAT_ID', '')                # Telegram chat_id,推送节点到tg,两个变量同时填写才会推送
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '')            # Telegram bot_token
+PORT = int(os.environ.get('SERVER_PORT') or os.environ.get('PORT') or 3000) # 订阅端口，如无法订阅，请手动修改为分配的端口
+
+# Create running folder
+def create_directory():
+    print('\033c', end='')
+    if not os.path.exists(FILE_PATH):
+        os.makedirs(FILE_PATH)
+        print(f"{FILE_PATH} is created")
+    else:
+        print(f"{FILE_PATH} already exists")
+
+# Global variables
+npm_path = os.path.join(FILE_PATH, 'npm')
+php_path = os.path.join(FILE_PATH, 'php')
+web_path = os.path.join(FILE_PATH, 'web')
+bot_path = os.path.join(FILE_PATH, 'bot')
+sub_path = os.path.join(FILE_PATH, 'sub.txt')
+list_path = os.path.join(FILE_PATH, 'list.txt')
+boot_log_path = os.path.join(FILE_PATH, 'boot.log')
+config_path = os.path.join(FILE_PATH, 'config.json')
+
+# Delete nodes
+def delete_nodes():
+    try:
+        if not UPLOAD_URL:
+            return
+
+        if not os.path.exists(sub_path):
+            return
+
+        try:
+            with open(sub_path, 'r') as file:
+                file_content = file.read()
+        except:
+            return None
+
+        decoded = base64.b64decode(file_content).decode('utf-8')
+        nodes = [line for line in decoded.split('\n') if any(protocol in line for protocol in ['vless://', 'vmess://', 'trojan://', 'hysteria2://', 'tuic://'])]
+
+        if not nodes:
+            return
+
+        try:
+            requests.post(f"{UPLOAD_URL}/api/delete-nodes", 
+                          data=json.dumps({"nodes": nodes}),
+                          headers={"Content-Type": "application/json"})
+        except:
+            return None
+    except Exception as e:
+        print(f"Error in delete_nodes: {e}")
+        return None
+
+# Clean up old files
+def cleanup_old_files():
+    paths_to_delete = ['web', 'bot', 'npm', 'php', 'boot.log', 'list.txt']
+    for file in paths_to_delete:
+        file_path = os.path.join(FILE_PATH, file)
+        try:
+            if os.path.exists(file_path):
+                if os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+                else:
+                    os.remove(file_path)
+        except Exception as e:
+            print(f"Error removing {file_path}: {e}")
+
+class RequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b'Hello World')
+            
+        elif self.path == f'/{SUB_PATH}':
+            try:
+                with open(sub_path, 'rb') as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header('Content-type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(content)
+            except:
+                self.send_response(404)
+                self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
+    
+# Determine system architecture
+def get_system_architecture():
+    architecture = platform.machine().lower()
+    if 'arm' in architecture or 'aarch64' in architecture:
+        return 'arm'
+    else:
+        return 'amd'
+
+# Download file based on architecture
+def download_file(file_name, file_url):
+    file_path = os.path.join(FILE_PATH, file_name)
+    try:
+        response = requests.get(file_url, stream=True)
+        response.raise_for_status()
+        
+        with open(file_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        
+        print(f"Download {file_name} successfully")
+        return True
+    except Exception as e:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        print(f"Download {file_name} failed: {e}")
+        return False
+
+# Get files for architecture
+def get_files_for_architecture(architecture):
+    if architecture == 'arm':
+        base_files = [
+            {"fileName": "web", "fileUrl": "https://arm64.ssss.nyc.mn/web"},
+            {"fileName": "bot", "fileUrl": "https://arm64.ssss.nyc.mn/2go"}
+        ]
+    else:
+        base_files = [
+            {"fileName": "web", "fileUrl": "https://amd64.ssss.nyc.mn/web"},
+            {"fileName": "bot", "fileUrl": "https://amd64.ssss.nyc.mn/2go"}
+        ]
+
+    if NEZHA_SERVER and NEZHA_KEY:
+        if NEZHA_PORT:
+            npm_url = "https://arm64.ssss.nyc.mn/agent" if architecture == 'arm' else "https://amd64.ssss.nyc.mn/agent"
+            base_files.insert(0, {"fileName": "npm", "fileUrl": npm_url})
+        else:
+            php_url = "https://arm64.ssss.nyc.mn/v1" if architecture == 'arm' else "https://amd64.ssss.nyc.mn/v1"
+            base_files.insert(0, {"fileName": "php", "fileUrl": php_url})
+
+    return base_files
+
+# Authorize files with execute permission
+def authorize_files(file_paths):
+    for relative_file_path in file_paths:
+        absolute_file_path = os.path.join(FILE_PATH, relative_file_path)
+        if os.path.exists(absolute_file_path):
+            try:
+                os.chmod(absolute_file_path, 0o775)
+                print(f"Empowerment success for {absolute_file_path}: 775")
+            except Exception as e:
+                print(f"Empowerment failed for {absolute_file_path}: {e}")
+
+# Configure Argo tunnel
+def argo_type():
+    if not ARGO_AUTH or not ARGO_DOMAIN:
+        print("ARGO_DOMAIN or ARGO_AUTH variable is empty, use quick tunnels")
+        return
+
+    if "TunnelSecret" in ARGO_AUTH:
+        with open(os.path.join(FILE_PATH, 'tunnel.json'), 'w') as f:
+            f.write(ARGO_AUTH)
+        
+        tunnel_id = ARGO_AUTH.split('"')[11]
+        tunnel_yml = f"""
+tunnel: {tunnel_id}
+credentials-file: {os.path.join(FILE_PATH, 'tunnel.json')}
+protocol: http2
+
+ingress:
+  - hostname: {ARGO_DOMAIN}
+    service: http://localhost:{ARGO_PORT}
+    originRequest:
+      noTLSVerify: true
+  - service: http_status:404
+"""
+        with open(os.path.join(FILE_PATH, 'tunnel.yml'), 'w') as f:
+            f.write(tunnel_yml)
+    else:
+        print("Use token connect to tunnel,please set the {ARGO_PORT} in cloudflare")
+
+# Execute shell command and return output
+def exec_cmd(command):
+    try:
+        process = subprocess.Popen(
+            command, 
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        stdout, stderr = process.communicate()
+        return stdout + stderr
+    except Exception as e:
+        print(f"Error executing command: {e}")
+        return str(e)
+
+# Download and run necessary files
+async def download_files_and_run():
+    global private_key, public_key
+    
+    architecture = get_system_architecture()
+    files_to_download = get_files_for_architecture(architecture)
+    
+    if not files_to_download:
+        print("Can't find a file for the current architecture")
+        return
+    
+    # Download all files
+    download_success = True
+    for file_info in files_to_download:
+        if not download_file(file_info["fileName"], file_info["fileUrl"]):
+            download_success = False
+    
+    if not download_success:
+        print("Error downloading files")
+        return
+    
+    # Authorize files
+    files_to_authorize = ['npm', 'web', 'bot'] if NEZHA_PORT else ['php', 'web', 'bot']
+    authorize_files(files_to_authorize)
+    
+    # Check TLS
+    port = NEZHA_SERVER.split(":")[-1] if ":" in NEZHA_SERVER else ""
+    if port in ["443", "8443", "2096", "2087", "2083", "2053"]:
+        nezha_tls = "true"
+    else:
+        nezha_tls = "false"
+
+    # Configure nezha
+    if NEZHA_SERVER and NEZHA_KEY:
+        if not NEZHA_PORT:
+            # Generate config.yaml for v1
+            config_yaml = f"""
+client_secret: {NEZHA_KEY}
+debug: false
+disable_auto_update: true
+disable_command_execute: false
+disable_force_update: true
+disable_nat: false
+disable_send_query: false
+gpu: false
+insecure_tls: false
+ip_report_period: 1800
+report_delay: 4
+server: {NEZHA_SERVER}
+skip_connection_count: false
+skip_procs_count: false
+temperature: false
+tls: {nezha_tls}
+use_gitee_to_upgrade: false
+use_ipv6_country_code: false
+uuid: {UUID}"""
+            
+            with open(os.path.join(FILE_PATH, 'config.yaml'), 'w') as f:
+                f.write(config_yaml)
+    
+    # Generate configuration file
+    config ={"log":{"access":"/dev/null","error":"/dev/null","loglevel":"none",},"inbounds":[{"port":ARGO_PORT ,"protocol":"vless","settings":{"clients":[{"id":UUID ,"flow":"xtls-rprx-vision",},],"decryption":"none","fallbacks":[{"dest":3001 },{"path":"/vless-argo","dest":3002 },{"path":"/vmess-argo","dest":3003 },{"path":"/trojan-argo","dest":3004 },],},"streamSettings":{"network":"tcp",},},{"port":3001 ,"listen":"127.0.0.1","protocol":"vless","settings":{"clients":[{"id":UUID },],"decryption":"none"},"streamSettings":{"network":"ws","security":"none"}},{"port":3002 ,"listen":"127.0.0.1","protocol":"vless","settings":{"clients":[{"id":UUID ,"level":0 }],"decryption":"none"},"streamSettings":{"network":"ws","security":"none","wsSettings":{"path":"/vless-argo"}},"sniffing":{"enabled":True ,"destOverride":["http","tls","quic"],"metadataOnly":False }},{"port":3003 ,"listen":"127.0.0.1","protocol":"vmess","settings":{"clients":[{"id":UUID ,"alterId":0 }]},"streamSettings":{"network":"ws","wsSettings":{"path":"/vmess-argo"}},"sniffing":{"enabled":True ,"destOverride":["http","tls","quic"],"metadataOnly":False }},{"port":3004 ,"listen":"127.0.0.1","protocol":"trojan","settings":{"clients":[{"password":UUID },]},"streamSettings":{"network":"ws","security":"none","wsSettings":{"path":"/trojan-argo"}},"sniffing":{"enabled":True ,"destOverride":["http","tls","quic"],"metadataOnly":False }},],"outbounds":[{"protocol":"freedom","tag": "direct" },{"protocol":"blackhole","tag":"block"}]}
+    with open(os.path.join(FILE_PATH, 'config.json'), 'w', encoding='utf-8') as config_file:
+        json.dump(config, config_file, ensure_ascii=False, indent=2)
+    
+    # Run nezha
+    if NEZHA_SERVER and NEZHA_PORT and NEZHA_KEY:
+        tls_ports = ['443', '8443', '2096', '2087', '2083', '2053']
+        nezha_tls = '--tls' if NEZHA_PORT in tls_ports else ''
+        command = f"nohup {os.path.join(FILE_PATH, 'npm')} -s {NEZHA_SERVER}:{NEZHA_PORT} -p {NEZHA_KEY} {nezha_tls} >/dev/null 2>&1 &"
+        
+        try:
+            exec_cmd(command)
+            print('npm is running')
+            time.sleep(1)
+        except Exception as e:
+            print(f"npm running error: {e}")
+    
+    elif NEZHA_SERVER and NEZHA_KEY:
+        # Run V1
+        command = f"nohup {FILE_PATH}/php -c \"{FILE_PATH}/config.yaml\" >/dev/null 2>&1 &"
+        try:
+            exec_cmd(command)
+            print('php is running')
+            time.sleep(1)
+        except Exception as e:
+            print(f"php running error: {e}")
+    else:
+        print('NEZHA variable is empty, skipping running')
+    
+    # Run sbX
+    command = f"nohup {os.path.join(FILE_PATH, 'web')} -c {os.path.join(FILE_PATH, 'config.json')} >/dev/null 2>&1 &"
+    try:
+        exec_cmd(command)
+        print('web is running')
+        time.sleep(1)
+    except Exception as e:
+        print(f"web running error: {e}")
+    
+    # Run cloudflared
+    if os.path.exists(os.path.join(FILE_PATH, 'bot')):
+        if re.match(r'^[A-Z0-9a-z=]{120,250}$', ARGO_AUTH):
+            args = f"tunnel --edge-ip-version auto --no-autoupdate --protocol http2 run --token {ARGO_AUTH}"
+        elif "TunnelSecret" in ARGO_AUTH:
+            args = f"tunnel --edge-ip-version auto --config {os.path.join(FILE_PATH, 'tunnel.yml')} run"
+        else:
+            args = f"tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile {os.path.join(FILE_PATH, 'boot.log')} --loglevel info --url http://localhost:{ARGO_PORT}"
+        
+        try:
+            exec_cmd(f"nohup {os.path.join(FILE_PATH, 'bot')} {args} >/dev/null 2>&1 &")
+            print('bot is running')
+            time.sleep(2)
+        except Exception as e:
+            print(f"Error executing command: {e}")
+    
+    time.sleep(5)
+    
+    # Extract domains and generate sub.txt
+    await extract_domains()
+
+# Extract domains from cloudflared logs
+async def extract_domains():
+    argo_domain = None
+
+    if ARGO_AUTH and ARGO_DOMAIN:
+        argo_domain = ARGO_DOMAIN
+        print(f'ARGO_DOMAIN: {argo_domain}')
+        await generate_links(argo_domain)
+    else:
+        try:
+            with open(boot_log_path, 'r') as f:
+                file_content = f.read()
+            
+            lines = file_content.split('\n')
+            argo_domains = []
+            
+            for line in lines:
+                domain_match = re.search(r'https?://([^ ]*trycloudflare\.com)/?', line)
+                if domain_match:
+                    domain = domain_match.group(1)
+                    argo_domains.append(domain)
+            
+            if argo_domains:
+                argo_domain = argo_domains[0]
+                print(f'ArgoDomain: {argo_domain}')
+                await generate_links(argo_domain)
+            else:
+                print('ArgoDomain not found, re-running bot to obtain ArgoDomain')
+                # Remove boot.log and restart bot
+                if os.path.exists(boot_log_path):
+                    os.remove(boot_log_path)
+                
+                try:
+                    exec_cmd('pkill -f "[b]ot" > /dev/null 2>&1')
+                except:
+                    pass
+                
+                time.sleep(1)
+                args = f'tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile {FILE_PATH}/boot.log --loglevel info --url http://localhost:{ARGO_PORT}'
+                exec_cmd(f'nohup {os.path.join(FILE_PATH, "bot")} {args} >/dev/null 2>&1 &')
+                print('bot is running.')
+                time.sleep(6)  # Wait 6 seconds
+                await extract_domains()  # Try again
+        except Exception as e:
+            print(f'Error reading boot.log: {e}')
+
+# Upload nodes to subscription service
+def upload_nodes():
+    if UPLOAD_URL and PROJECT_URL:
+        subscription_url = f"{PROJECT_URL}/{SUB_PATH}"
+        json_data = {
+            "subscription": [subscription_url]
+        }
+        
+        try:
+            response = requests.post(
+                f"{UPLOAD_URL}/api/add-subscriptions",
+                json=json_data,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                print('Subscription uploaded successfully')
+        except Exception as e:
+            pass
+    
+    elif UPLOAD_URL:
+        if not os.path.exists(list_path):
+            return
+        
+        with open(list_path, 'r') as f:
+            content = f.read()
+        
+        nodes = [line for line in content.split('\n') if any(protocol in line for protocol in ['vless://', 'vmess://', 'trojan://', 'hysteria2://', 'tuic://'])]
+        
+        if not nodes:
+            return
+        
+        json_data = json.dumps({"nodes": nodes})
+        
+        try:
+            response = requests.post(
+                f"{UPLOAD_URL}/api/add-nodes",
+                data=json_data,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                print('Nodes uploaded successfully')
+        except:
+            return None
+    else:
+        return
+    
+# Send notification to Telegram
+def send_telegram():
+    if not BOT_TOKEN or not CHAT_ID:
+        # print('TG variables is empty, Skipping push nodes to TG')
+        return
+    
+    try:
+        with open(sub_path, 'r') as f:
+            message = f.read()
+        
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        
+        escaped_name = re.sub(r'([_*\[\]()~>#+=|{}.!\-])', r'\\\1', NAME)
+        
+        params = {
+            "chat_id": CHAT_ID,
+            "text": f"**{escaped_name}节点推送通知**\n{message}",
+            "parse_mode": "MarkdownV2"
+        }
+        
+        requests.post(url, params=params)
+        print('Telegram message sent successfully')
+    except Exception as e:
+        print(f'Failed to send Telegram message: {e}')
+
+# Generate links and subscription content
+async def generate_links(argo_domain):
+    meta_info = subprocess.run(['curl', '-s', 'https://speed.cloudflare.com/meta'], capture_output=True, text=True)
+    meta_info = meta_info.stdout.split('"')
+    ISP = f"{meta_info[25]}-{meta_info[17]}".replace(' ', '_').strip()
+
+    time.sleep(2)
+    VMESS = {"v": "2", "ps": f"{NAME}-{ISP}", "add": CFIP, "port": CFPORT, "id": UUID, "aid": "0", "scy": "none", "net": "ws", "type": "none", "host": argo_domain, "path": "/vmess-argo?ed=2560", "tls": "tls", "sni": argo_domain, "alpn": "", "fp": "chrome"}
+ 
+    list_txt = f"""
+vless://{UUID}@{CFIP}:{CFPORT}?encryption=none&security=tls&sni={argo_domain}&fp=chrome&type=ws&host={argo_domain}&path=%2Fvless-argo%3Fed%3D2560#{NAME}-{ISP}
+  
+vmess://{ base64.b64encode(json.dumps(VMESS).encode('utf-8')).decode('utf-8')}
+
+trojan://{UUID}@{CFIP}:{CFPORT}?security=tls&sni={argo_domain}&fp=chrome&type=ws&host={argo_domain}&path=%2Ftrojan-argo%3Fed%3D2560#{NAME}-{ISP}
+    """
+    
+    with open(os.path.join(FILE_PATH, 'list.txt'), 'w', encoding='utf-8') as list_file:
+        list_file.write(list_txt)
+
+    sub_txt = base64.b64encode(list_txt.encode('utf-8')).decode('utf-8')
+    with open(os.path.join(FILE_PATH, 'sub.txt'), 'w', encoding='utf-8') as sub_file:
+        sub_file.write(sub_txt)
+        
+    print(sub_txt)
+    
+    print(f"{FILE_PATH}/sub.txt saved successfully")
+    
+    # Additional actions
+    send_telegram()
+    upload_nodes()
+  
+    return sub_txt   
+ 
+# Add automatic access task
+def add_visit_task():
+    if not AUTO_ACCESS or not PROJECT_URL:
+        print("Skipping adding automatic access task")
+        return
+    
+    try:
+        response = requests.post(
+            'https://keep.gvrander.eu.org/add-url',
+            json={"url": PROJECT_URL},
+            headers={"Content-Type": "application/json"}
+        )
+        print('automatic access task added successfully')
+    except Exception as e:
+        print(f'Failed to add URL: {e}')
+
+# Clean up files after 90 seconds
+def clean_files():
+    def _cleanup():
+        time.sleep(90)  # Wait 90 seconds
+        files_to_delete = [boot_log_path, config_path, list_path, web_path, bot_path, php_path, npm_path]
+        
+        if NEZHA_PORT:
+            files_to_delete.append(npm_path)
+        elif NEZHA_SERVER and NEZHA_KEY:
+            files_to_delete.append(php_path)
+        
+        for file in files_to_delete:
+            try:
+                if os.path.exists(file):
+                    if os.path.isdir(file):
+                        shutil.rmtree(file)
+                    else:
+                        os.remove(file)
+            except:
+                pass
+        
+        print('\033c', end='')
+        print('App is running')
+        print('Thank you for using this script, enjoy!')
+    
+    threading.Thread(target=_cleanup, daemon=True).start()
+    
+# Main function to start the server
+async def start_server():
+    delete_nodes()
+    cleanup_old_files()
+    create_directory()
+    argo_type()
+    await download_files_and_run()
+    add_visit_task()
+    
+    server_thread = Thread(target=run_server)
+    server_thread.daemon = True
+    server_thread.start()   
+    
+    clean_files()
+    
+def run_server():
+    server = HTTPServer(('0.0.0.0', PORT), RequestHandler)
+    print(f"Server is running on port {PORT}")
+    print(f"Running done！")
+    print(f"\nLogs will be delete in 90 seconds")
+    server.serve_forever()
+    
+def run_async():
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(start_server()) 
+    
+    while True:
+        time.sleep(3600)
+        
+if __name__ == "__main__":
+    run_async()
